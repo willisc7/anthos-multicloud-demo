@@ -53,7 +53,12 @@
     ```
 1. Create config file
     ```
-    ./bmctl create config -c abm-cluster-0 \
+    ./bmctl create config -c cluster1 \
       --enable-apis --create-service-accounts \
       --project-id=seismic-anthos-0
     ```
+1. `vim ./bmctl-workspace/abm-cluster-0/abm-cluster-0.yaml` and change the following:
+    * `sshPrivateKeyPath: /home/admin_/.ssh/abm`
+    * `spec.controlPlane.nodePoolSpec.nodes[address]: 10.128.0.7`
+    * uncomment `spec.loadBalancer.vips.controlPlaneVIP`
+    * uncomment `spec.loadBalancer.vips.ingressVIP`
