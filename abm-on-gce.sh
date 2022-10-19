@@ -5,6 +5,7 @@ PROJECT_NAME=project-name
 CREATE_VPC_NAME=default
 ROUTER_NAME=router
 CLUSTER_NAME=abmc
+OWNER_EMAIL=your-email
 export ZONE=us-central1-a
 export REGION=us-central1
 ### (end) EDIT VARS ###
@@ -374,13 +375,13 @@ EOF
 # *** from the admin workstation (because that's where kubeconfig is) ***
 gcloud compute ssh $VM_WS --zone ${ZONE} --tunnel-through-iap << EOF
 sudo su -
-gcloud alpha container hub memberships generate-gateway-rbac  \
+gcloud beta container fleet memberships generate-gateway-rbac  \
 --membership=abmc \
 --role=clusterrole/cluster-admin \
---users=admin@myuserid.specificURL.com \
+--users=$OWNER_EMAIL \
 --project=$PROJECT_NAME \
 --kubeconfig=/root/bmctl-workspace/abmc/abmc-kubeconfig \
---context=abmc-admin@mycontext \
+--context=abmc-admin@abmc \
 --apply
 EOF
 
@@ -390,25 +391,15 @@ EOF
 # Under clusters in the console, click the login button, use GKE account auth.
 
 # Validate that retrieving creds from Cloud workstation work
-# ISSUE: this didnt work for me. Error: 
-# W1018 09:42:09.886461   54510 gcp.go:120] WARNING: the gcp auth plugin is deprecated in v1.22+, unavailable in v1.25+; use gcloud instead.
-# To learn more, consult https://cloud.google.com/blog/products/containers-kubernetes/kubectl-auth-changes-in-gke
-# error: the server doesn't have a resource type "nodes"
-# gcloud container hub memberships get-credentials abmc
-# kubectl get nodes
+gcloud container hub memberships get-credentials abmc
+kubectl get nodes
+# Output should look like this:
 # NAME      STATUS   ROLES                  AGE   VERSION
 # abm-cp1   Ready    control-plane,master   20h   v1.22.8-gke.200
 # abm-cp2   Ready    control-plane,master   19h   v1.22.8-gke.200
 # abm-cp3   Ready    control-plane,master   19h   v1.22.8-gke.200
 # abm-w1    Ready    worker                 19h   v1.22.8-gke.200
 # abm-w2    Ready    worker                 19h   v1.22.8-gke.200
-
-
-
-gcloud projects add-iam-policy-binding abm-$PROJECT_NAME \
-  --member serviceAccount:baremetal-gcr@$PROJECT_NAME.iam.gserviceaccount.com \
-  --role "roles/gkehub.connect"
-
 
 # Delete cluster/VMs
 # gcloud compute instances list | grep 'abm' | awk '{print $2}' | xargs gcloud --quiet compute instances delete --zone $ZONE
